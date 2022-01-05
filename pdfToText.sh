@@ -10,9 +10,9 @@
 	done
 	for fich in $(find -name "*.pdf")
 	do
-		$(pdftotext $fich)
+		$(pdftotext $fich -raw)
 	done
 	for fich in $(find $1 -name "*.txt" | grep -oP '(?<=/)[^ ]*')
 	do 
-		mv $1/$fich TEXT	
+		mv $fich TEXT	
 	done
