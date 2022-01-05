@@ -30,9 +30,13 @@ def find_paragraph(file_path, titre):
                         while line == "\n":
                             line = file.readline()
                 while line:
-                    if(line == "\n") :
-                        break
-                    paragraph = paragraph + line.strip().lower().strip(titre)
+                    if(titre == "introduction") :
+                        if(line.strip() == "2") :
+                             break
+                    else :
+                        if(line == "\n") :
+                             break
+                    paragraph = paragraph + line.strip() + " "
                     line = file.readline()
                 if(paragraph != "\n"):
                     return paragraph
@@ -54,6 +58,7 @@ def parser_file_to_xml(target_path, output_path) :
     article = etree.Element("article")
     file_name = os.path.basename(target_path).replace(".txt", ".pdf")
     title = ""
+    writer =""
     abstract = ""
 
     preamble = etree.SubElement(article, "preamble")
@@ -62,13 +67,29 @@ def parser_file_to_xml(target_path, output_path) :
     f = open(target_path, "r")
     for i in range(2) :
         title = title + f.readline().strip('\n').strip() + " "
+    for line in f :
+        writer = writer + line.strip().lower()
+        line = f.readline()
+        writer = writer + line.strip().lower()
+       # print(writer)
+        if(line.lower().find("abstract") == -1) :
+             break
     f.close()
+    
+    
 
     titre = etree.SubElement(article, "titre")
     titre.text = title
     
+    #auteur = etree.SubElement(article, "auteur")
+    #auteur.text = writer
+    
     abstract = etree.SubElement(article, "abstract")
     abstract.text = find_paragraph(target_path, "abstract")
+    
+    introduction = etree.SubElement(article,"introduction")
+    introduction.text = find_paragraph(target_path,"introduction")
+    #print(find_paragraph(target_path,"introduction"))
     
     biblio = etree.SubElement(article, "biblio")
     biblio.text = find_paragraph(target_path, "references")
@@ -118,6 +139,7 @@ def main():
                   
     dossier_txt = "TEXT"
     dossier_output = create_directory("OUTPUT")
+    
     files = find_ext(filepath,"pdf")
     
     pdf_to_txt(filepath)
@@ -125,14 +147,16 @@ def main():
     if(choix_option == "-t"): # extraire les information dans un fichier txt
     	
     	for file in files :
-
+		
             File_txt_path = dossier_txt + "/" + os.path.basename(file).replace(".pdf", ".txt")
             output_path = dossier_output + "/" + os.path.basename(file).replace(".pdf", ".txt") 
             parser_file_to_txt(File_txt_path, output_path)
 
     if(choix_option == "-x"): # extraire les information dans un fichier xml
     	for file in files :
+            
             File_txt_path = dossier_txt  + "/" + os.path.basename(file).replace(".pdf", ".txt")
+            
             output_path =  dossier_output + "/" + os.path.basename(file).replace(".pdf", ".xml")
             parser_file_to_xml(File_txt_path, output_path)
             
