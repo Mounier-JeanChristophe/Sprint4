@@ -32,19 +32,35 @@ def find_paragraph(file_path, titre):
                             line = file.readline()
                 while line:
                     if(titre == "introduction") :
-                        if(line[0:1] == "2" and linePrecedant.strip()[-1:] == "."):
-                             break
+                        if((line[0:1] == "2" and linePrecedant.strip()[-1:] == ".") or (line[0:3] == "II." and linePrecedant.strip()[-1:] == ".")):
+                             break   
                     else :
                         if(line.lower().strip() == "1 introduction" or line.strip() == "I. INTRODUCTION") :
                              break
                     paragraph = paragraph + line.strip() + " "
                     linePrecedant = line
-                    print(linePrecedant.strip()[-1:])
                     line = file.readline()
                 if(paragraph != "\n"):
                     return paragraph
     return "Not Found\n"
-
+def find_reference(file_path, titre):
+    paragraph = ""
+    with open(file_path, "r") as file :
+        for line in file :
+            if(line.find(titre) != -1 and len(line.strip())<=11):            	
+                if(len(line) <= len(titre)+1):
+                        line = file.readline()
+                        while line == "\n":
+                            line = file.readline()
+                while line:
+                    if(titre == "References") :
+                        if(line is None) :
+                             break
+                    paragraph = paragraph + line.strip() + " "
+                    line = file.readline()
+                if(paragraph != "\n"):
+                    return paragraph
+    return "Not Found\n"
 #cree un dossier passe en parametre "dossier" dans le chemin passé en parametre "chemin"
 def create_directory(dossier):
     directory_name = dossier
@@ -94,7 +110,7 @@ def parser_file_to_xml(target_path, output_path) :
     
     
     biblio = etree.SubElement(article, "biblio")
-    biblio.text = find_paragraph(target_path, "references")
+    biblio.text = find_reference(target_path, "References")
 
     xmlstr = ET.tostring(article).decode('utf8')
     newxml = md.parseString(xmlstr)
