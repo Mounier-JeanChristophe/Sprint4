@@ -22,21 +22,24 @@ def pdf_to_txt(inpute_path) :
 
 def find_paragraph(file_path, titre):
     paragraph = ""
+    linePrecedant = "aa"
     with open(file_path, "r") as file :
         for line in file :
-            if(line.lower().find(titre) != -1):
+            if(line.lower().find(titre) != -1):            	
                 if(len(line) <= len(titre)+1):
                         line = file.readline()
                         while line == "\n":
                             line = file.readline()
                 while line:
                     if(titre == "introduction") :
-                        if(line.strip() == "2") :
+                        if(line[0:1] == "2" and linePrecedant.strip()[-1:] == "."):
                              break
                     else :
-                        if(line == "\n") :
+                        if(line.lower().strip() == "1 introduction" or line.strip() == "I. INTRODUCTION") :
                              break
                     paragraph = paragraph + line.strip() + " "
+                    linePrecedant = line
+                    print(linePrecedant.strip()[-1:])
                     line = file.readline()
                 if(paragraph != "\n"):
                     return paragraph
@@ -71,7 +74,6 @@ def parser_file_to_xml(target_path, output_path) :
         writer = writer + line.strip().lower()
         line = f.readline()
         writer = writer + line.strip().lower()
-       # print(writer)
         if(line.lower().find("abstract") == -1) :
              break
     f.close()
@@ -89,7 +91,7 @@ def parser_file_to_xml(target_path, output_path) :
     
     introduction = etree.SubElement(article,"introduction")
     introduction.text = find_paragraph(target_path,"introduction")
-    #print(find_paragraph(target_path,"introduction"))
+    
     
     biblio = etree.SubElement(article, "biblio")
     biblio.text = find_paragraph(target_path, "references")
