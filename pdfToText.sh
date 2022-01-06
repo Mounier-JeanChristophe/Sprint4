@@ -10,7 +10,7 @@
 	done
 	for fich in $(find -name "*.pdf")
 	do
-		$(pdftotext -enc ASCII7 $fich)
+		$(pdftotext -raw -enc ASCII7 $fich)
 	done
 	for fich in $(find $1 -name "*.txt" | grep -oP '(?<=/)[^ ]*')
 	do 
