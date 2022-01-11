@@ -25,7 +25,8 @@ def find_paragraph(file_path, titre):
     linePrecedant = "aa"
     with open(file_path, "r") as file :
         for line in file :
-            if(line.lower().find(titre) != -1):            	
+            if(line.lower().find(titre) != -1): #or line.find(titre) != -1):   
+                       	
                 if(len(line) <= len(titre)+1):
                         line = file.readline()
                         while line == "\n":
@@ -34,15 +35,38 @@ def find_paragraph(file_path, titre):
                     if(titre == "introduction") :
                         if((line[0:1] == "2" and linePrecedant.strip()[-1:] == ".") or (line[0:3] == "II." and linePrecedant.strip()[-1:] == ".")):
                              break   
+
                     else :
                         if(line.lower().strip() == "1 introduction" or line.strip() == "I. INTRODUCTION") :
                              break
+
                     paragraph = paragraph + line.strip() + " "
                     linePrecedant = line
                     line = file.readline()
+
                 if(paragraph != "\n"):
                     return paragraph
+
+            elif((titre == "Conclusion" and line.find(titre) != -1) or line.find("Conclusions") != -1 or titre.upper() in line):
+
+                if(len(line) <= len(titre)+1):
+                    line = file.readline()
+                    while line == "\n":
+                        line = file.readline()
+
+                while line:
+                    if(("References" in line or "REFERENCES" in line)):
+                        break   
+
+                    paragraph = paragraph + line.strip() + " "
+                    linePrecedant = line
+                    line = file.readline()
+
+                if(paragraph != "\n"):
+                    return paragraph
+
     return "Not Found\n"
+
 def find_reference(file_path, titre):
     paragraph = ""
     with open(file_path, "r") as file :
@@ -61,6 +85,7 @@ def find_reference(file_path, titre):
                 if(paragraph != "\n"):
                     return paragraph
     return "Not Found\n"
+
 #cree un dossier passe en parametre "dossier" dans le chemin passé en parametre "chemin"
 def create_directory(dossier):
     directory_name = dossier
@@ -108,7 +133,9 @@ def parser_file_to_xml(target_path, output_path) :
     introduction = etree.SubElement(article,"introduction")
     introduction.text = find_paragraph(target_path,"introduction")
     
-    
+    conclusion = etree.SubElement(article, "conclusion")
+    conclusion.text = find_paragraph(target_path, "Conclusion")
+
     biblio = etree.SubElement(article, "biblio")
     biblio.text = find_reference(target_path, "References")
 
@@ -146,6 +173,11 @@ def parser_file_to_txt(filepath, output_path) :
     abstract = find_paragraph(filepath, "abstract")
     f = open(output_path, "a")
     f.write("\n\n abstract : " + abstract)
+    f.close()
+
+    conclusion = find_paragraph(filepath, "Conclusion")
+    f = open(output_path, "a")
+    f.write("\n\n conclusion : " + conclusion)
     f.close()
 
 def main():
