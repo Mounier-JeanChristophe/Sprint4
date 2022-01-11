@@ -66,24 +66,75 @@ def find_paragraph(file_path, titre):
                     return paragraph
 
     return "Not Found\n"
-
 def find_reference(file_path, titre):
     paragraph = ""
     with open(file_path, "r") as file :
         for line in file :
-            if(line.find(titre) != -1 and len(line.strip())<=11):            	
+            if((line.find(titre) != -1 or line.find("REFERENCES") != -1) and len(line.strip())<=13):            	
                 if(len(line) <= len(titre)+1):
                         line = file.readline()
                         while line == "\n":
                             line = file.readline()
                 while line:
-                    if(titre == "References") :
+                    if(titre == "References" or titre.upper() == "REFERENCES") :
                         if(line is None) :
                              break
                     paragraph = paragraph + line.strip() + " "
                     line = file.readline()
                 if(paragraph != "\n"):
                     return paragraph
+    return "Not Found\n"
+    
+def find_discussion(file_path, titre):
+    paragraph = ""
+    with open(file_path, "r") as file :
+        for line in file :
+            if(line.find(titre) != -1 or line.find("DISCUSSION") != -1):            	
+                if(len(line) <= len(titre)+1):
+                        line = file.readline()
+                        while line == "\n":
+                            line = file.readline()
+                while line:
+                    if(titre == "Discussion" or titre.upper() == "DISCUSSION") :
+                        if(((line.find("References") != -1 or line.find("REFERENCES") != -1 )and len(line.strip())<=11) or (line.find("Conclusions") != -1 or line.find("CONCLUSIONS") != -1 or line.find("Conclusion") != -1 or line.find("CONCLUSION") != -1)):
+                             break
+                    paragraph = paragraph + line.strip() + " "
+                    line = file.readline()
+                if(paragraph != "\n"):
+                    return paragraph
+    return "Not Found\n"
+
+
+def find_corps(file_path):
+    paragraph = ""
+    linePrecedant = ""
+    check = find_paragraph(file_path,"introduction")
+    with open(file_path, "r") as file :
+        for line in file :
+            if(check == "Not Found\n"):
+            	if(line[0:1] == "1" or line[0:3] == "I."):
+                     while line:
+                         if(line.find("Discussion") != -1 or line.find("DISCUSSION") != -1 or line.find("Conclusions") != -1 or line.find("CONCLUSIONS") != -1 or line.find("Conclusion") != -1 or line.find("CONCLUSION") != -1 or ((line.find("References") != -1 or line.find("REFERENCES") != -1) and len(line.strip())<=13)) :
+                               break
+                         paragraph = paragraph + line.strip() + " "
+                         line = file.readline() 
+                     return paragraph     
+			    
+            	linePrecedant = line
+			    
+            else:
+            	if((line[0:1] == "2" and linePrecedant.strip()[-1:] == ".") or (line[0:3] == "II." and linePrecedant.strip()[-1:] == ".")):
+                     while line:
+                         if(line.find("Discussion") != -1 or line.find("DISCUSSION") != -1 or line.find("Conclusions") != -1 or line.find("CONCLUSIONS") != -1 or line.find("Conclusion") != -1 or line.find("CONCLUSION") != -1 or ((line.find("References") != -1 or line.find("REFERENCES") != -1) and len(line.strip())<=13)) :
+                               break
+                         paragraph = paragraph + line.strip() + " "
+                         line = file.readline() 
+                     return paragraph     
+			    
+            	linePrecedant = line
+		    	
+		    
+            
     return "Not Found\n"
 
 #cree un dossier passe en parametre "dossier" dans le chemin passé en parametre "chemin"
@@ -108,24 +159,26 @@ def parser_file_to_xml(target_path, output_path) :
     preamble = etree.SubElement(article, "preamble")
     preamble.text = file_name
 
-    f = open(target_path, "r")
+    file = open(target_path, "r")
     for i in range(2) :
-        title = title + f.readline().strip('\n').strip() + " "
-    for line in f :
-        writer = writer + line.strip().lower()
-        line = f.readline()
-        writer = writer + line.strip().lower()
-        if(line.lower().find("abstract") == -1) :
-             break
-    f.close()
+        title = title + file.readline().strip('\n').strip() + " "
+    
+    for line in file :
+       if(line.lower().find("abstract") != -1):         
+          break;
+       writer = writer + line.strip('\n').strip()
+        	
+    file.close()
+    
+    
     
     
 
     titre = etree.SubElement(article, "titre")
     titre.text = title
     
-    #auteur = etree.SubElement(article, "auteur")
-    #auteur.text = writer
+    auteur = etree.SubElement(article, "auteur")
+    auteur.text = writer
     
     abstract = etree.SubElement(article, "abstract")
     abstract.text = find_paragraph(target_path, "abstract")
@@ -133,12 +186,20 @@ def parser_file_to_xml(target_path, output_path) :
     introduction = etree.SubElement(article,"introduction")
     introduction.text = find_paragraph(target_path,"introduction")
     
+    corps = etree.SubElement(article,"corps")
+    corps.text = find_corps(target_path)
+    
+    discu = etree.SubElement(article, "Discussion")
+    discu.text = find_discussion(target_path, "Discussion")
+    
     conclusion = etree.SubElement(article, "conclusion")
     conclusion.text = find_paragraph(target_path, "Conclusion")
-
+    
     biblio = etree.SubElement(article, "biblio")
     biblio.text = find_reference(target_path, "References")
-
+    
+    
+    
     xmlstr = ET.tostring(article).decode('utf8')
     newxml = md.parseString(xmlstr)
     with open(output_path, "a") as output:
@@ -149,7 +210,7 @@ def parser_file_to_xml(target_path, output_path) :
 
 
 def parser_file_to_txt(filepath, output_path) :
-
+    writer = ""
     file_name = os.path.basename(filepath).replace(".txt", ".pdf")
     title = ""
     abstract = ""
@@ -162,23 +223,61 @@ def parser_file_to_txt(filepath, output_path) :
     f = open(filepath, "r")
     for i in range(2) :
         title = title + f.readline().strip('\n').strip() + " "
+    
+    for line in f :
+       if(line.lower().find("abstract") != -1):         
+          break;
+       writer = writer + line.strip('\n').strip()
+        	
     f.close()
+
+	
     #   -- le titre de fichier --
 
     f = open(output_path, "a")
     f.write("\n\n le titre de ce fichier est  : " + title.rstrip() + "\n")
     f.close()
+    f = open(output_path, "a")
+    f.write("\n\n les auteurs  : " + writer.rstrip() + "\n")
+    f.close()
+
     #   -- abstract --
 
     abstract = find_paragraph(filepath, "abstract")
     f = open(output_path, "a")
     f.write("\n\n abstract : " + abstract)
     f.close()
-
+    
+    introduction = find_paragraph(filepath, "introduction")
+    f = open(output_path, "a")
+    f.write("\n\n introduction : " + introduction)
+    f.close()
+    
+    corps = find_corps(filepath)
+    f = open(output_path, "a")
+    f.write("\n\n corps : " + corps)
+    f.close()
+    
+    
+    discussion = find_discussion(filepath, "Discussion")
+    f = open(output_path, "a")
+    f.write("\n\n discussion : " + discussion)
+    f.close()
+    
+    
+    
     conclusion = find_paragraph(filepath, "Conclusion")
     f = open(output_path, "a")
     f.write("\n\n conclusion : " + conclusion)
     f.close()
+    
+    
+    reference = find_reference(filepath, "References")
+    f = open(output_path, "a")
+    f.write("\n\n references : " + reference)
+    f.close()
+    
+    
 
 def main():
 
